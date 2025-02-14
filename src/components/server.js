@@ -1,3 +1,5 @@
+
+const jwt = require("jsonwebtoken");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -26,6 +28,9 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", userSchema);
 
+// JWT Secret Key
+const JWT_SECRET = "your_jwt_secret_key";
+
 // Login Route
 app.post("/login", async (req, res) => {
   try {
@@ -53,58 +58,6 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/check-government-data", async (req, res) => {
-  try {
-    const { voterId, mobileNumber, email } = req.query;
-
-    // Connect to GovernmentData database
-    const governmentDB = mongoose.connection.useDb("GovernmentData");
-    const UserData = governmentDB.collection("userData");
-
-    // Check if all details match a record in GovernmentData
-    const matchedUser = await UserData.findOne({ voterId, mobileNumber, email });
-
-    if (matchedUser) {
-      res.status(200).json({ exists: true });
-    } else {
-      res.status(404).json({ exists: false });
-    }
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-app.post('/signup', async (req, res) => {
-  try {
-    const { voterId, mobileNumber, email, password } = req.body;
-
-    // Check if Voter ID is already registered in voterDB
-    const existingUser = await User.findOne({ voterId });
-    if (existingUser) {
-      return res.status(409).json({ message: 'Voter ID already registered' });
-    }
-
-    // Generate OTP
-    const otp = generateOtp();
-
-    // Save new user with OTP
-    const newUser = new User({ voterId, mobileNumber, email, password, otp });
-    await newUser.save();
-
-    // Send OTP to user email
-    await sendMail(email, otp);
-    console.log(`OTP for ${voterId}: ${otp}`);
-
-    res.status(201).json({ message: "User registered successfully! OTP sent." });
-  } catch (error) {
-    console.error("Error during signup:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-
-
-
 // OTP Verification Route
 app.post("/verify-otp", async (req, res) => {
   try {
@@ -115,7 +68,11 @@ app.post("/verify-otp", async (req, res) => {
       // Clear OTP after successful verification
       user.otp = undefined;
       await user.save();
-      res.status(200).json({ message: "OTP verified successfully!" });
+
+      // Generate JWT token
+      const token = jwt.sign({ voterId: user.voterId }, JWT_SECRET, { expiresIn: "1h" });
+
+      res.status(200).json({ message: "OTP verified successfully!", token });
     } else {
       res.status(400).json({ message: "Invalid OTP" });
     }
@@ -125,11 +82,30 @@ app.post("/verify-otp", async (req, res) => {
   }
 });
 
+// Middleware to verify JWT token
+const verifyToken = (req, res, next) => {
+  const token = req.headers["authorization"];
+  if (!token) {
+    return res.status(403).json({ message: "No token provided." });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: "Unauthorized!" });
+    }
+    req.voterId = decoded.voterId;
+    next();
+  });
+};
+
+// Protected Route Example
+app.get("/protected", verifyToken, (req, res) => {
+  res.status(200).json({ message: "This is a protected route", voterId: req.voterId });
+});
+
 // Start the server
 const PORT = 8000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-
-
 
