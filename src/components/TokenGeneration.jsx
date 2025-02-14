@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { InputGroup, FormControl, Button, Card, Container, Row, Col, Form } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Dropdown } from "primereact/dropdown";
@@ -27,14 +27,37 @@ const TokenGeneration = () => {
     { label: "Candidate C", value: "C" },
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (voterKey && selectedCandidate) {
-      // Confirmation popup
-      const isConfirmed = window.confirm(`Are you sure you want to vote for ${selectedCandidate}?`);
-      if (isConfirmed) {
-        alert(`Your vote for ${selectedCandidate} has been recorded.`);
-        navigate("/"); // Redirect to homepage after confirmation
+      try {
+        const token = localStorage.getItem("token");
+        const voterId = JSON.parse(atob(token.split(".")[1])).voterId; // Extract voterId from token
+
+        // Validate the voter key
+        const response = await fetch("http://localhost:8000/validate-voter-key", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token,
+          },
+          body: JSON.stringify({ voterId, voterKey }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          // Confirmation popup
+          const isConfirmed = window.confirm(`Are you sure you want to vote for ${selectedCandidate}?`);
+          if (isConfirmed) {
+            alert(`Your vote for ${selectedCandidate} has been recorded.`);
+            navigate("/"); // Redirect to homepage after confirmation
+          }
+        } else {
+          alert(data.message);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("An error occurred. Please try again.");
       }
     } else {
       alert("Please fill in all fields!");
