@@ -7,43 +7,61 @@ export default function Login() {
   const navigate = useNavigate();
   const [voterId, setVoterId] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
 
-  // Function to allow only 10-digit numbers for Voter ID
   const handleInput = (event) => {
     event.target.value = event.target.value.replace(/\D/g, "").slice(0, 10);
     setVoterId(event.target.value);
   };
 
-  // Handle form submission
-const handleSubmit = async (event) => {
-  event.preventDefault();
-
-  try {
-    const response = await fetch("http://localhost:8000/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ voterId, password }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      alert("Login successful");
-      navigate("/token"); // Redirect to token page if login is successful
-    } 
-    else if (response.status === 401) {
-      alert("Invalid Voter ID or Password. Please try again.");
-    } 
-    else {
-      alert("An error occurred. Please try again.");
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      const response = await fetch("http://localhost:8000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voterId, password }),
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        alert(data.message);
+        return;
+      }
+  
+      alert("OTP sent to your registered email.");
+      setOtpSent(true);
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Server error. Please try again.");
     }
-  } 
-  catch (error) {
-    console.error("Error:", error);
-    alert("An error occurred. Please try again.");
-  }
-};
+  };
+  
 
+  const handleOtpVerification = async (event) => {
+    event.preventDefault();
+    try {
+      const response = await fetch("http://localhost:8000/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voterId, otp }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert("OTP verified successfully");
+        navigate("/token");
+      } else {
+        alert(data.message);
+      }
+    } 
+    catch (error) {
+      console.error("Error:", error);
+      alert("Server error. Please try again.");
+    }
+  };
 
   return (
     <Container className="d-flex justify-content-center align-items-center vh-100">
@@ -51,44 +69,54 @@ const handleSubmit = async (event) => {
         <Col md={6} className="p-5 bg-light rounded shadow">
           <h2 className="text-center mb-4">Sign in</h2>
 
-          <Form onSubmit={handleSubmit}>
-  
-            <Form.Group className="mb-3" controlId="voterId">
-              <Form.Label>Your Voter ID</Form.Label>
-              <Form.Control type="text" placeholder="Enter your Voter ID" pattern="[0-9]{10}" title="Please enter a 10-digit voter ID." required value={voterId} onInput={handleInput}/>
-            </Form.Group>
+          {!otpSent ? (
+            <Form onSubmit={handleSubmit}>
+              <Form.Group className="mb-3" controlId="voterId">
+                <Form.Label>Your Voter ID</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Enter your Voter ID"
+                  pattern="[0-9]{10}"
+                  title="Please enter a 10-digit voter ID."
+                  required
+                  value={voterId}
+                  onInput={handleInput}
+                />
+              </Form.Group>
 
-            <Form.Group className="mb-3" controlId="password">
-              <Form.Label>Password</Form.Label>
-              <Form.Control type="password" placeholder="Enter your password" required value={password} onChange={(e) => setPassword(e.target.value)}/>
-            </Form.Group>
+              <Form.Group className="mb-3" controlId="password">
+                <Form.Label>Password</Form.Label>
+                <Form.Control
+                  type="password"
+                  placeholder="Enter your password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </Form.Group>
 
-            <Button variant="primary" type="submit" className="w-100">
-              Login
-            </Button>
+              <Button variant="primary" type="submit" className="w-100">
+                Login
+              </Button>
+            </Form>
+          ) : (
+            <Form onSubmit={handleOtpVerification}>
+              <Form.Group className="mb-3" controlId="otp">
+                <Form.Label>Enter OTP</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Enter the OTP"
+                  required
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                />
+              </Form.Group>
 
-          </Form>
-
-          <div className="text-center mt-3">
-            <p>Don't have an account?{" "}
-
-              <span className="text-primary" style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
-                Sign-up here
-              </span>
-
-            </p>
-          </div>
-
-          <div className="text-center mt-3">
-            <p>
-
-              <span className="text-primary" style={{ cursor: "pointer" }} onClick={() => navigate("/forgot")}>
-                Forgot Password
-              </span>
-              
-            </p>
-          </div>
-          
+              <Button variant="primary" type="submit" className="w-100">
+                Verify OTP
+              </Button>
+            </Form>
+          )}
         </Col>
       </Row>
     </Container>
