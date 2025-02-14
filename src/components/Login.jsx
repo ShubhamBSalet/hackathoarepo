@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,14 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      navigate("/homepage"); // Redirect to homepage if already logged in
+    }
+  }, [navigate]);
 
   const handleInput = (event) => {
     event.target.value = event.target.value.replace(/\D/g, "").slice(0, 10);
@@ -42,24 +50,25 @@ export default function Login() {
   const handleOtpVerification = async (event) => {
     event.preventDefault();
     try {
-      const response = await fetch("http://localhost:8000/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voterId, otp }),
-      });
+        const response = await fetch("http://localhost:8000/verify-otp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ voterId, otp }),
+        });
 
-      const data = await response.json();
-      if (response.ok) {
-        alert("OTP verified successfully");
-        navigate("/token");
-      } else {
-        alert(data.message);
-      }
+        const data = await response.json();
+        if (response.ok) {
+            alert("OTP verified successfully");
+            localStorage.setItem("token", data.token); // Store the token in local storage
+            navigate("/homepage"); // Redirect to homepage after successful login
+        } else {
+            alert(data.message);
+        }
     } catch (error) {
-      console.error("Error:", error);
-      alert("Server error. Please try again.");
+        console.error("Error:", error);
+        alert("Server error. Please try again.");
     }
-  };
+};
 
   return (
     <Container className="d-flex justify-content-center align-items-center vh-100">
