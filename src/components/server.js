@@ -53,12 +53,33 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Signup Route
+app.get("/check-government-data", async (req, res) => {
+  try {
+    const { voterId, mobileNumber, email } = req.query;
+
+    // Connect to GovernmentData database
+    const governmentDB = mongoose.connection.useDb("GovernmentData");
+    const UserData = governmentDB.collection("userData");
+
+    // Check if all details match a record in GovernmentData
+    const matchedUser = await UserData.findOne({ voterId, mobileNumber, email });
+
+    if (matchedUser) {
+      res.status(200).json({ exists: true });
+    } else {
+      res.status(404).json({ exists: false });
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 app.post('/signup', async (req, res) => {
   try {
     const { voterId, mobileNumber, email, password } = req.body;
-    const existingUser = await User.findOne({ voterId });
 
+    // Check if Voter ID is already registered in voterDB
+    const existingUser = await User.findOne({ voterId });
     if (existingUser) {
       return res.status(409).json({ message: 'Voter ID already registered' });
     }
@@ -76,10 +97,13 @@ app.post('/signup', async (req, res) => {
 
     res.status(201).json({ message: "User registered successfully! OTP sent." });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error during signup:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
+
+
+
 
 // OTP Verification Route
 app.post("/verify-otp", async (req, res) => {
@@ -106,3 +130,6 @@ const PORT = 8000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+
+
