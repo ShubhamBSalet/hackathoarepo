@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +16,13 @@ export default function SignUp() {
   const [otp, setOtp] = useState("");
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [governmentDataValid, setGovernmentDataValid] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      navigate("/homepage"); // Redirect to homepage if already logged in
+    }
+  }, [navigate]);
 
   // Function to allow only 10-digit numbers
   const handleInput = (event, setterFunction) => {
