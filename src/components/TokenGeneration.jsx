@@ -1,118 +1,88 @@
-import React, { useState } from "react";
-import { Steps } from "primereact/steps";
-import { Button } from "primereact/button";
-import { InputText } from "primereact/inputtext";
+import React, { useState,useEffect } from "react";
+import { InputGroup, FormControl, Button, Card, Container, Row, Col, Form } from "react-bootstrap";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { Dropdown } from "primereact/dropdown";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
-import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
-import jsPDF from "jspdf";
-import emailjs from "emailjs-com";
 
 const TokenGeneration = () => {
-    const navigate = useNavigate();
-    const [activeIndex, setActiveIndex] = useState(0);
-    const [voterId, setVoterId] = useState("");
-    const [otp, setOtp] = useState("");
-    const [privateKey, setPrivateKey] = useState("");
-    const [token, setToken] = useState("");
-    const [email, setEmail] = useState("");
+  const navigate = useNavigate();
 
-    const generatePrivateKey = () => {
-        const newPrivateKey = "PK-" + Math.random().toString(36).substr(2, 10);
-        setPrivateKey(newPrivateKey);
-        setActiveIndex(3);
-    };
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/unauthorized"); // Redirect to unauthorized if not logged in
+    }
+  }, [navigate]);
 
-    const generateToken = () => {
-        const newToken = "TOKEN-" + Math.random().toString(36).substr(2, 8);
-        setToken(newToken);
-        setActiveIndex(4);
-    };
+  const [voterKey, setVoterKey] = useState("");
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
 
-    const generatePDF = () => {
-        const doc = new jsPDF();
-        doc.text("Voting System Token", 10, 10);
-        doc.text(`Voter ID: ${voterId}`, 10, 20);
-        doc.text(`Token ID: ${token}`, 10, 30);
-        return doc;
-    };
+  // Candidate list
+  const candidates = [
+    { label: "Candidate A", value: "A" },
+    { label: "Candidate B", value: "B" },
+    { label: "Candidate C", value: "C" },
+  ];
 
-    const sendEmail = () => {
-        const doc = generatePDF();
-        const pdfData = doc.output("datauristring");
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (voterKey && selectedCandidate) {
+      // Confirmation popup
+      const isConfirmed = window.confirm(`Are you sure you want to vote for ${selectedCandidate}?`);
+      if (isConfirmed) {
+        alert(`Your vote for ${selectedCandidate} has been recorded.`);
+        navigate("/"); // Redirect to homepage after confirmation
+      }
+    } else {
+      alert("Please fill in all fields!");
+    }
+  };
 
-        const emailParams = {
-            voter_email: email,
-            voter_id: voterId,
-            token_id: token,
-            attachment: pdfData,
-        };
+  return (
+    <Container className="mt-5">
+      <Row className="justify-content-center">
+        <Col md={6}>
+          <Card className="shadow-lg p-4 border-0" style={{ borderRadius: "15px" }}>
+            <Card.Body>
+              <h2 className="text-center mb-4 text-primary">Cast Your Vote</h2>
+              <Form onSubmit={handleSubmit}>
+                <Form.Group className="mb-4">
+                  <Form.Label><strong>Voter Key:</strong></Form.Label>
+                  <InputGroup>
+                    <FormControl
+                      value={voterKey}
+                      onChange={(e) => setVoterKey(e.target.value)}
+                      placeholder="Enter your Voter Key"
+                      required
+                    />
+                  </InputGroup>
+                </Form.Group>
 
-        emailjs.send(
-            "service_n2qnm6a",  // Replace with EmailJS service ID
-            "templete_4hvdar3",  // Replace with EmailJS template ID
-            emailParams,
-            "vyWiSsszZzsabofw_"       // Replace with EmailJS public key
-        )
-        .then((response) => {
-            alert("Token PDF sent to email!");
-            console.log("Email sent:", response);
-        })
-        .catch((error) => {
-            console.error("Error sending email:", error);
-        });
-    };
+                <Form.Group className="mb-4">
+                  <Form.Label><strong>Select Candidate:</strong></Form.Label>
+                  <Dropdown
+                    value={selectedCandidate}
+                    options={candidates}
+                    onChange={(e) => setSelectedCandidate(e.value)}
+                    placeholder="Select a Candidate"
+                    className="w-100"
+                    required
+                  />
+                </Form.Group>
 
-    const steps = [
-        { label: "Enter Voter ID" },
-        { label: "Verify OTP" },
-        { label: "Generate Private Key" },
-        { label: "Token Generated" }
-    ];
-
-    return (
-        <div className="container mt-5">
-            <h2 className="text-center mb-4">Token Generation Process</h2>
-            <Steps model={steps} activeIndex={activeIndex} />
-            <div className="card p-4 mt-4">
-                {activeIndex === 0 && (
-                    <div>
-                        <h5>Step 1: Enter Voter ID</h5>
-                        <InputText value={voterId} onChange={(e) => setVoterId(e.target.value)} placeholder="Enter Voter ID" className="form-control mb-3" />
-                        <Button label="Next" onClick={() => setActiveIndex(1)} className="btn btn-primary" />
-                    </div>
-                )}
-                {activeIndex === 1 && (
-                    <div>
-                        <h5>Step 2: Verify OTP</h5>
-                        <InputText value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="Enter OTP" className="form-control mb-3" />
-                        <Button label="Verify & Next" onClick={() => setActiveIndex(2)} className="btn btn-success" />
-                    </div>
-                )}
-                {activeIndex === 2 && (
-                    <div>
-                        <h5>Step 3: Generate Private Key</h5>
-                        <Button label="Generate Key" onClick={generatePrivateKey} className="btn btn-warning" />
-                    </div>
-                )}
-                {activeIndex === 3 && (
-                    <div>
-                        <h5>Step 4: Token Generated</h5>
-                        <p><strong>Private Key:</strong> {privateKey}</p>
-                        
-                        <label>Enter Email:</label>
-                        <InputText value={email} onChange={(e) => setEmail(e.target.value)} className="form-control mb-3" />
-                        
-                        {/* <Button label="Send Token via Email" className="btn btn-danger" onClick={sendEmail} /> */}
-                        
-                        <Button label="Go to Cast Vote" className="btn btn-success mt-3" onClick={(sendEmail) => navigate("/vote")} />
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+                <Button type="submit" variant="success" className="w-100">
+                  Submit Vote
+                </Button>
+              </Form>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
+  );
 };
 
 export default TokenGeneration;
