@@ -73,28 +73,29 @@ export default function SignUp() {
     }
   };
 
-  // Handle OTP submission
-  const handleOtpSubmit = async (event) => {
-    event.preventDefault();
+// Handle OTP submission
+const handleOtpSubmit = async (event) => {
+  event.preventDefault();
 
-    try {
-      const response = await fetch("http://localhost:8000/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voterId, otp }),
-      });
+  try {
+    const response = await fetch("http://localhost:8000/verify-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ voterId, otp }),
+    });
 
-      if (response.ok) {
-        alert("OTP verified successfully!");
-        navigate("/login"); // Redirect to login page
-      } else {
-        alert("Invalid OTP. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("An error occurred. Please try again.");
+    if (response.ok) {
+      alert("OTP verified successfully!");
+      navigate("/login"); // Redirect to login page
+    } else {
+      alert("Invalid OTP. Please try again.");
     }
-  };
+  } catch (error) {
+    console.error("Error:", error);
+    alert("An error occurred. Please try again.");
+  }
+};
+
 
   return (
     <Container className="d-flex justify-content-center align-items-center vh-100">
@@ -218,3 +219,4 @@ export default function SignUp() {
     </Container>
   );
 }
+
