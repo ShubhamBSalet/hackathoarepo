@@ -26,6 +26,33 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", userSchema);
 
+// Login Route
+app.post("/login", async (req, res) => {
+  try {
+    const { voterId, password } = req.body;
+
+    // Check if the user exists and the password matches
+    const user = await User.findOne({ voterId, password });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid voter ID or password" });
+    }
+
+    // Generate OTP
+    const otp = generateOtp();
+    user.otp = otp;
+    await user.save();
+
+    // Send OTP to registered email
+    await sendMail(user.email, otp);
+    console.log(`OTP for ${voterId}: ${otp}`);
+
+    res.status(200).json({ message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 // Signup Route
 app.post('/signup', async (req, res) => {
   try {
