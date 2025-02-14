@@ -33,3 +33,5 @@ const generateOtp = () => {
 };
 
 module.exports = { sendMail, generateOtp };
+
+
