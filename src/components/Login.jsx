@@ -23,14 +23,14 @@ export default function Login() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ voterId, password }),
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
         alert(data.message);
         return;
       }
-  
+
       alert("OTP sent to your registered email.");
       setOtpSent(true);
     } catch (error) {
@@ -38,7 +38,6 @@ export default function Login() {
       alert("Server error. Please try again.");
     }
   };
-  
 
   const handleOtpVerification = async (event) => {
     event.preventDefault();
@@ -56,8 +55,7 @@ export default function Login() {
       } else {
         alert(data.message);
       }
-    } 
-    catch (error) {
+    } catch (error) {
       console.error("Error:", error);
       alert("Server error. Please try again.");
     }
@@ -117,6 +115,30 @@ export default function Login() {
               </Button>
             </Form>
           )}
+
+          <div className="text-center mt-3">
+            <p>
+              Don't have account?{" "}
+              <span
+                className="text-primary"
+                style={{ cursor: "pointer" }}
+                onClick={() => navigate("/")}
+              >
+                Sign-up here
+              </span>
+            </p>
+          </div>
+          <div className="text-center mt-3">
+            <p>
+              <span
+                className="text-primary"
+                style={{ cursor: "pointer" }}
+                onClick={() => navigate("/forgot")}
+              >
+                Forgot Password
+              </span>
+            </p>
+          </div>
         </Col>
       </Row>
     </Container>
